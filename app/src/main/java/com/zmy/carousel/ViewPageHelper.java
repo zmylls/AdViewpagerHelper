@@ -11,7 +11,6 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 
-import com.bumptech.glide.Glide;
 import com.zmy.viewpager.R;
 
 import java.util.ArrayList;
@@ -32,16 +31,19 @@ public class ViewPageHelper {
     private int mPreDotIndex = 0;
     private Timer timer;
     private TimerTask timerTask;
-    private AdViewPageLayout adViewPageLayout;
 
-    private List<AdInfo> adInfos = new ArrayList<AdInfo>();
+    private Context context;
+    private AdViewPageLayout adViewPageLayout;
+    private List<AdInfo> adInfos = new ArrayList<AdInfo>();//广告
 
     private List<View> dots = new ArrayList<View>();
     private List<ImageView> imgs = new ArrayList<ImageView>();
     private AdViewpagerAdapter adViewpagerAdapter;
-    private Context context;
+
 
     private OnBannerClickListenr onBannerClickListenr;
+
+    private ImageLoaderListener mImageLoaderListener;
 
     private Drawable errorDrawable;
 
@@ -53,6 +55,60 @@ public class ViewPageHelper {
         this.adViewPageLayout.setOnPageChangeListener(pageChangeListener);
     }
 
+    public static class Builder{
+        private Context context;
+        private AdViewPageLayout adViewPageLayout;
+        private List<AdInfo> adInfos = new ArrayList<AdInfo>();//广告
+
+        private ImageLoaderListener mImageLoaderListener;
+        private OnBannerClickListenr mOnBannerClickListner;
+
+        public Builder(Context context){
+            this.context=context;
+        }
+
+        public Builder initView(AdViewPageLayout layout){
+            this.adViewPageLayout = layout;
+            return this;
+        }
+
+        public Builder imageLoader(ImageLoaderListener listener){
+            this.mImageLoaderListener = listener;
+            return this;
+        }
+
+        public Builder click(OnBannerClickListenr clickListenr){
+            this.mOnBannerClickListner = clickListenr;
+            return this;
+        }
+
+        public Builder initData(List<AdInfo> data){
+            this.adInfos = data;
+            return this;
+        }
+
+        public ViewPageHelper build(){
+            if(adViewPageLayout == null){
+                throw new RuntimeException("AdViewPageLayout can not be null");
+            }
+
+            if(mImageLoaderListener == null){
+                throw new RuntimeException("must init ImageLoaderListener");
+            }
+
+            if(adInfos == null){
+                adInfos = new ArrayList<AdInfo>();
+            }
+
+            ViewPageHelper viewPageHelper= new ViewPageHelper(context, adViewPageLayout, adInfos);;
+            viewPageHelper.setImageLoaderListener(mImageLoaderListener);
+            viewPageHelper.setBannerClickListenr(mOnBannerClickListner);
+            viewPageHelper.init();
+            return viewPageHelper;
+        }
+
+    }
+
     private ImageView createImageView(Context context, int index) {
         ImageView imageView = new ImageView(context);
         imageView.setScaleType(ImageView.ScaleType.FIT_XY);
@@ -62,7 +118,7 @@ public class ViewPageHelper {
         imageView.setImageResource(R.mipmap.ic_launcher);
 
         setBannerImageClick(imageView, adInfos.get(index));
-        Glide.with(context).load(adInfos.get(index).getAdUrl()).error(errorDrawable).into(imageView);
+        mImageLoaderListener.loaderBitmap(adInfos.get(index).getAdUrl(),errorDrawable,imageView);
 
         return imageView;
     }
@@ -94,7 +150,12 @@ public class ViewPageHelper {
         }
     }
 
-    public void init() {
+    private void init() {
+
+        if(mImageLoaderListener == null){
+            throw new RuntimeException("must init ImageLoaderListener");
+        }
+
         int realLength = adInfos.size();
         if (realLength <= 0) {
             adViewPageLayout.withNoAd();//没有广告 显示一张默认图片
@@ -204,8 +265,7 @@ public class ViewPageHelper {
             dots.get(currentIndex).setBackgroundResource(R.drawable.dot_selected);
             mPreDotIndex = currentIndex;
 
-            Glide.with(context).load(adInfos.get(currentIndex).getAdUrl()).error(errorDrawable).into(imgs.get(pageIndex));
-
+            mImageLoaderListener.loaderBitmap(adInfos.get(currentIndex).getAdUrl(), errorDrawable, imgs.get(pageIndex));
         }
 
         @Override
@@ -230,8 +290,12 @@ public class ViewPageHelper {
         });
     }
 
-    public void setBannerClickListenr(OnBannerClickListenr listenr) {
+    private void setBannerClickListenr(OnBannerClickListenr listenr) {
         this.onBannerClickListenr = listenr;
+    }
+
+    private void setImageLoaderListener(ImageLoaderListener listener) {
+        this.mImageLoaderListener = listener;
     }
 
     /**
@@ -239,6 +303,10 @@ public class ViewPageHelper {
      */
     public interface OnBannerClickListenr {
         public void onBannerClick(AdInfo bannerInfo);
+    }
+
+    public interface ImageLoaderListener {
+        public void loaderBitmap(String url, Drawable errorDrawable, ImageView img);
     }
 
     public static class AdInfo {

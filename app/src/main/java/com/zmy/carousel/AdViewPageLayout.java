@@ -125,10 +125,6 @@ public class AdViewPageLayout extends FrameLayout {
         return layoutDots;
     }
 
-//    public ImageView getIvBanner() {
-//        return ivBanner;
-//    }
-
     public void removeDots() {
         this.layoutDots.removeAllViews();
     }

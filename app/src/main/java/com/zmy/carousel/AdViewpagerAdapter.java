@@ -12,18 +12,18 @@ import java.util.List;
  * Created by zhangmingyao on 16/1/26.
  * Email : 501863760@qq.com
  */
-public class AdViewpagerAdapter extends PagerAdapter {
+public class AdViewpagerAdapter<T extends View> extends PagerAdapter {
 
-    private List<ImageView> imgs;
+    private List<T> imgs;
 
-    public AdViewpagerAdapter(List<ImageView> imgs) {
+    public AdViewpagerAdapter(List<T> imgs) {
         this.imgs = imgs;
     }
 
     @Override
     public Object instantiateItem(ViewGroup container, int position) {
 
-        ImageView imageView = imgs.get(position % getCount());
+        T imageView = imgs.get(position % getCount());
         ((ViewPager) container).addView(imageView);
 
         return imageView;
